@@ -807,7 +807,12 @@ async function main() {
   console.error("Web Pilot MCP server running on stdio");
 }
 
-main().catch((error) => {
-  console.error("Fatal error:", error);
-  process.exit(1);
-});
+
+(globalThis as any).__WEB_PILOT_TOOLS__ = TOOLS;
+(globalThis as any).__WEB_PILOT_HANDLE__ = handleToolCall;
+if (!process.env.SSE_MODE) {
+  main().catch((error) => {
+    console.error("Fatal error:", error);
+    process.exit(1);
+  });
+}
