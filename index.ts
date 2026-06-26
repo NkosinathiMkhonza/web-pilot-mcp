@@ -810,9 +810,35 @@ async function main() {
 
 (globalThis as any).__WEB_PILOT_TOOLS__ = TOOLS;
 (globalThis as any).__WEB_PILOT_HANDLE__ = handleToolCall;
+
 if (!process.env.SSE_MODE) {
   main().catch((error) => {
     console.error("Fatal error:", error);
     process.exit(1);
+  });
+} else {
+  import('express').then(express => {
+    import('@modelcontextprotocol/sdk/server/sse.js').then(({ SSEServerTransport }) => {
+      import('@modelcontextprotocol/sdk/server/index.js').then(({ Server }) => {
+        import('@modelcontextprotocol/sdk/types.js').then(({ ListToolsRequestSchema, CallToolRequestSchema }) => {
+          const app = express.default();
+          const PORT = process.env.PORT || 8080;
+          app.get('/sse', (req, res) => {
+            console.log("SSE connection");
+            const transport = new SSEServerTransport('/messages', res);
+            const server = new Server({ name: 'web-pilot-mcp', version: '1.0.0' }, { capabilities: { tools: {} } });
+            server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: TOOLS }));
+            server.setRequestHandler(CallToolRequestSchema, async (request) => {
+              const { name, arguments: args } = request.params;
+              return handleToolCall(name, args || {});
+            });
+            server.connect(transport);
+          });
+          app.post('/messages', express.default.json(), (req, res) => res.status(200).end());
+          app.get('/', (req, res) => res.json({ name: 'web-pilot-mcp', sse: '/sse' }));
+          app.listen(PORT, () => console.log('HTTP server on port ' + PORT));
+        });
+      });
+    });
   });
 }
