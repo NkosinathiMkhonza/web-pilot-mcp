@@ -833,4 +833,6 @@ app.get('/sse', (req, res) => {
 
 app.post('/messages', express.json(), (req, res) => res.status(200).end());
 app.get('/', (req, res) => res.json({ name: 'web-pilot-mcp', sse: '/sse' }));
+app.get('/.well-known/mcp/server-card.json', (req, res) => res.json({ name: 'web-pilot-mcp', description: '8 web tools for AI. Fetch pages as markdown, search, extract links, metadata, contacts, parse sitemaps and RSS.', url: '/sse' }));
 app.listen(PORT, () => console.log('HTTP server on port ' + PORT));
+
